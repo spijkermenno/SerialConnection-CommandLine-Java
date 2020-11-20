@@ -1,15 +1,13 @@
 package nl.mennospijker;
 
-import com.fazecast.jSerialComm.SerialPort;
+import com.fazecast.jSerialComm.*;
 import nl.mennospijker.util.ConsoleColor;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 
 public class SerialConnection {
-    SerialPort[] comports;
+    SerialPort[] availableComports;
+    SerialPort currentComport;
 
     SerialConnection() {
         searchAvailableComPorts();
@@ -19,9 +17,9 @@ public class SerialConnection {
     public void searchAvailableComPorts() {
         System.out.println("Possible connections:");
 
-        comports = SerialPort.getCommPorts();
-        for (int i = 0; i < comports.length; i++) {
-            System.out.println(ConsoleColor.ANSI_YELLOW + "[" + i + "] " + ConsoleColor.ANSI_RESET + comports[i]);
+        availableComports = SerialPort.getCommPorts();
+        for (int i = 0; i < availableComports.length; i++) {
+            System.out.println(ConsoleColor.yellowString("[" + i + "] ") + ConsoleColor.purpleString(availableComports[i].toString()) + " => " + ConsoleColor.greenString(availableComports[i].getDescriptivePortName()));
         }
     }
 
@@ -35,31 +33,76 @@ public class SerialConnection {
             e.printStackTrace();
         }
 
-        if (checkContent(input) >= 0) {
-            int inputInt = checkContent(input);
-            SerialPort chosenPort = comports[inputInt];
-            System.out.println("You've chose " + ConsoleColor.ANSI_PURPLE + chosenPort + ConsoleColor.ANSI_RESET);
+        if (isInt(input) >= 0) {
+            int inputInt = isInt(input);
+            currentComport = availableComports[inputInt];
+            System.out.println("You've chose " + ConsoleColor.ANSI_PURPLE + currentComport + " (" + currentComport.getDescriptivePortName() + ")" + ConsoleColor.ANSI_RESET);
 
-            chosenPort.openPort();
-            chosenPort.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0);
-
-            InputStream comportInputStream = chosenPort.getInputStream();
-
-            try {
-                int data = comportInputStream.read();
-                while (data != -1) {
-                    System.out.print((char) data);
-
-                    data = comportInputStream.read();
-                }
-                comportInputStream.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+            if (!currentComport.openPort()) {
+                throw new SerialPortInvalidPortException("Port could not be opened");
             }
+
+            System.out.println(ConsoleColor.greenString("Port opened succesfully"));
+
+            currentComport.setBaudRate(9600);
+
+            /**
+             * DataListener
+             */
+            currentComport.addDataListener(new SerialPortDataListener() {
+                @Override
+                public int getListeningEvents() {
+                    return SerialPort.LISTENING_EVENT_DATA_AVAILABLE;
+                }
+
+
+                @Override
+                public void serialEvent(SerialPortEvent event) {
+                    if (event.getEventType() != SerialPort.LISTENING_EVENT_DATA_AVAILABLE)
+                        return;
+                    byte[] newData = new byte[currentComport.bytesAvailable()];
+                    int numRead = currentComport.readBytes(newData, newData.length);
+                    System.out.println(ConsoleColor.redString("[" + java.time.LocalTime.now() + "]") + " Read " + numRead + " bytes.");
+
+                    readInputStream(numRead);
+                }
+            });
+
+            currentComport.addDataListener(new SerialPortDataListener() {
+                @Override
+                public int getListeningEvents() {
+                    return SerialPort.LISTENING_EVENT_DATA_RECEIVED;
+                }
+
+
+                @Override
+                public void serialEvent(SerialPortEvent event) {
+                    if (event.getEventType() != SerialPort.LISTENING_EVENT_DATA_RECEIVED)
+                        return;
+                    System.out.println("All data read");
+                }
+            });
         }
     }
 
-    public int checkContent(String input) {
+    public synchronized void readInputStream(int bytes) {
+
+        InputStream comportInputStream = currentComport.getInputStream();
+        currentComport.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0);
+
+        try {
+            while (currentComport.bytesAvailable() > 0) {
+                System.out.print((char) comportInputStream.read());
+            }
+            comportInputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println("\n");
+    }
+
+    public int isInt(String input) {
         try {
             Integer.parseInt(input);
         } catch (Exception e) {
