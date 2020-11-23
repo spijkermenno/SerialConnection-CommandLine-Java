@@ -91,7 +91,7 @@ public class SerialConnection {
         currentComport.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0);
 
         try {
-            while (currentComport.bytesAvailable() > 0) {
+            for (int i = 0; i < bytes; i++){
                 System.out.print((char) comportInputStream.read());
             }
             comportInputStream.close();
