@@ -1,4 +1,4 @@
-package nl.mennospijker;
+package nl.mennospijker.app;
 
 import nl.mennospijker.UI.Frame;
 
