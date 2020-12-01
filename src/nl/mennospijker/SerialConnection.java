@@ -1,6 +1,9 @@
 package nl.mennospijker;
 
 import com.fazecast.jSerialComm.*;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+
 import nl.mennospijker.util.ConsoleColor;
 
 import java.io.*;
@@ -12,15 +15,36 @@ public class SerialConnection {
     SerialPort currentComport;
     boolean usingComport = false;
 
-    SerialConnection() {
+    public SerialConnection() {
+        availableComports = SerialPort.getCommPorts();
+
+    }
+
+    public void startConsoleApplication() {
         searchAvailableComPorts();
         readConsole();
+    }
+
+    public JSONArray getAvailableComports(){
+        JSONArray fullList = new JSONArray();
+
+        for (int i = 0; i < availableComports.length; i++) {
+            SerialPort cp = availableComports[i];
+            JSONObject comport = new JSONObject();
+            comport.put("id", i);
+            comport.put("name", cp.toString());
+            comport.put("description", cp.getDescriptivePortName());
+            comport.put("System-name", cp.getSystemPortName());
+
+            fullList.add(comport);
+        }
+
+        return fullList;
     }
 
     public void searchAvailableComPorts() {
         System.out.println("Possible connections:");
 
-        availableComports = SerialPort.getCommPorts();
         for (int i = 0; i < availableComports.length; i++) {
             System.out.println(ConsoleColor.yellowString(
                     "[" + i + "] ")
@@ -176,7 +200,9 @@ public class SerialConnection {
 
     public synchronized void writeBytesToComPort(String data) {
         if (!usingComport) {
+            usingComport = true;
             usingComport = currentComport.writeBytes(data.getBytes(), data.length()) <= 0;
+            usingComport = false;
         } else {
             Thread t1 = new Thread(() -> {
                 try {

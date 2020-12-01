@@ -1,15 +1,13 @@
 package nl.mennospijker;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-
-import com.fazecast.jSerialComm.SerialPort;
-import nl.mennospijker.util.ConsoleColor;
+import nl.mennospijker.UI.Frame;
 
 public class Main {
 
     public static void main(String[] args) {
-        new SerialConnection();
+        //new SerialConnection().startConsoleApplication();
+        //new SerialConnection().getAvailableComports();
+
+        new Frame();
     }
 }
