@@ -1,6 +1,6 @@
 package nl.mennospijker.app;
 
-import nl.mennospijker.UI.Frame;
+import nl.mennospijker.app.UI.Frame;
 
 public class Main {
 

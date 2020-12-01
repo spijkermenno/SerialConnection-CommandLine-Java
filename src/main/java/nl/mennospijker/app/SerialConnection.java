@@ -1,4 +1,4 @@
-package nl.mennospijker;
+package nl.mennospijker.app;
 
 import com.fazecast.jSerialComm.*;
 import org.json.simple.JSONArray;
@@ -6,6 +6,7 @@ import org.json.simple.JSONObject;
 
 import nl.mennospijker.util.ConsoleColor;
 
+import javax.swing.*;
 import java.io.*;
 
 import static java.lang.Thread.sleep;
@@ -17,7 +18,6 @@ public class SerialConnection {
 
     public SerialConnection() {
         availableComports = SerialPort.getCommPorts();
-
     }
 
     public void startConsoleApplication() {
@@ -85,7 +85,7 @@ public class SerialConnection {
         }
     }
 
-    void createComportConnection(SerialPort currentComport) {
+    public void createComportConnection(SerialPort currentComport) {
         if (!currentComport.openPort()) {
             throw new SerialPortInvalidPortException("Port could not be opened");
         }
@@ -128,6 +128,106 @@ public class SerialConnection {
         writeBytesToComPort("test");
     }
 
+    public void createComportConnectionWithView(int i, JPanel field) {
+        currentComport = availableComports[i];
+
+        if (currentComport == null){
+            throw new SerialPortInvalidPortException();
+        }
+
+        if (!currentComport.openPort()) {
+            throw new SerialPortInvalidPortException("Port could not be opened");
+        }
+
+        System.out.println(ConsoleColor.greenString("Port opened successfully"));
+
+        currentComport.setBaudRate(9600);
+
+        currentComport.addDataListener(new SerialPortDataListener() {
+            @Override
+            public int getListeningEvents() {
+                return SerialPort.LISTENING_EVENT_DATA_AVAILABLE;
+            }
+
+            @Override
+            public void serialEvent(SerialPortEvent event) {
+                if (event.getEventType() != SerialPort.LISTENING_EVENT_DATA_AVAILABLE) {
+                    return;
+                }
+
+                readInputStreamWithView(field);
+            }
+        });
+
+        currentComport.addDataListener(new SerialPortDataListener() {
+            @Override
+            public int getListeningEvents() {
+                return SerialPort.LISTENING_EVENT_DATA_RECEIVED;
+            }
+
+            @Override
+            public void serialEvent(SerialPortEvent event) {
+                if (event.getEventType() != SerialPort.LISTENING_EVENT_DATA_RECEIVED) {
+                    return;
+                }
+                System.out.println("LISTENING_EVENT_DATA_RECEIVED");
+            }
+        });
+    }
+
+    public synchronized void readInputStreamWithView(JPanel field) {
+        if (!usingComport) {
+            usingComport = true;
+
+            System.out.println(
+                    ConsoleColor.redString("[" + java.time.LocalTime.now() + "]")
+                            + " Read "
+                            + currentComport.bytesAvailable()
+                            + " bytes."
+            );
+
+            StringBuilder readedValue = new StringBuilder();
+
+            InputStream comportInputStream = currentComport.getInputStream();
+            currentComport.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0);
+
+            System.out.print(ConsoleColor.ANSI_BLUE);
+
+            try {
+                final int bytes = currentComport.bytesAvailable();
+                for (int i = bytes; i > 0; i--) {
+                    char character = (char) comportInputStream.read();
+
+                    if (character != '\n') {
+                        readedValue.append(character);
+                    }
+                }
+
+                JLabel l = new JLabel("[" + java.time.LocalTime.now() + "] " + readedValue.toString());
+                field.add(l, "span, grow");
+
+                field.revalidate();
+                System.out.println(readedValue.toString());
+
+                comportInputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            System.out.println(ConsoleColor.ANSI_RESET + "\n");
+            usingComport = false;
+        } else {
+            Thread t1 = new Thread(() -> {
+                try {
+                    sleep(200);
+                    readInputStream();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
+            t1.start();
+        }
+    }
 
     public synchronized void readInputStream() {
         if (!usingComport) {

@@ -1,6 +1,6 @@
-package nl.mennospijker.UI;
+package nl.mennospijker.app.UI;
 
-import nl.mennospijker.SerialConnection;
+import nl.mennospijker.app.SerialConnection;
 
 import javax.swing.*;
 import java.awt.*;
