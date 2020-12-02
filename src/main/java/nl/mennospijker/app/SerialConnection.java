@@ -7,6 +7,7 @@ import org.json.simple.JSONObject;
 import nl.mennospijker.util.ConsoleColor;
 
 import javax.swing.*;
+import java.awt.*;
 import java.io.*;
 
 import static java.lang.Thread.sleep;
@@ -128,7 +129,7 @@ public class SerialConnection {
         writeBytesToComPort("test");
     }
 
-    public void createComportConnectionWithView(int i, JPanel field) {
+    public void createComportConnectionWithView(int i, JPanel field, JScrollPane sp) {
         currentComport = availableComports[i];
 
         if (currentComport == null){
@@ -155,7 +156,7 @@ public class SerialConnection {
                     return;
                 }
 
-                readInputStreamWithView(field);
+                readInputStreamWithView(field, sp);
             }
         });
 
@@ -175,23 +176,15 @@ public class SerialConnection {
         });
     }
 
-    public synchronized void readInputStreamWithView(JPanel field) {
+    public synchronized void readInputStreamWithView(JPanel field, JScrollPane sp) {
         if (!usingComport) {
             usingComport = true;
-
-            System.out.println(
-                    ConsoleColor.redString("[" + java.time.LocalTime.now() + "]")
-                            + " Read "
-                            + currentComport.bytesAvailable()
-                            + " bytes."
-            );
 
             StringBuilder readedValue = new StringBuilder();
 
             InputStream comportInputStream = currentComport.getInputStream();
             currentComport.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0);
 
-            System.out.print(ConsoleColor.ANSI_BLUE);
 
             try {
                 final int bytes = currentComport.bytesAvailable();
@@ -207,14 +200,15 @@ public class SerialConnection {
                 field.add(l, "span, grow");
 
                 field.revalidate();
-                System.out.println(readedValue.toString());
+
+                JScrollBar sb = sp.getVerticalScrollBar();
+                sb.setValue( sb.getMaximum() );
 
                 comportInputStream.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
-            System.out.println(ConsoleColor.ANSI_RESET + "\n");
             usingComport = false;
         } else {
             Thread t1 = new Thread(() -> {

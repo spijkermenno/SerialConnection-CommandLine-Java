@@ -20,8 +20,8 @@ public class Frame extends JFrame {
         setLocation(screen.width / 2 - this.getSize().width / 2, screen.height / 2 - this.getSize().height / 2);
 
         // initialize content pane
-        Dashboard dashboard = new Dashboard(new SerialConnection());
+        SelectionPanel selectionPanel = new SelectionPanel(new SerialConnection());
 
-        setContentPane(dashboard);
+        setContentPane(selectionPanel);
     }
 }
