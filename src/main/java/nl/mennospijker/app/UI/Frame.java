@@ -19,9 +19,12 @@ public class Frame extends JFrame {
         Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
         setLocation(screen.width / 2 - this.getSize().width / 2, screen.height / 2 - this.getSize().height / 2);
 
-        // initialize content pane
-        SelectionPanel selectionPanel = new SelectionPanel(new SerialConnection());
+        ModeSelectionPanel modeSelectionPanel = new ModeSelectionPanel(this);
+        setContentPane(modeSelectionPanel);
 
-        setContentPane(selectionPanel);
+        // initialize content pane
+        //SerialPortSelectionPanel serialPortSelectionPanel = new SerialPortSelectionPanel(new SerialConnection());
+
+        //setContentPane(serialPortSelectionPanel);
     }
 }

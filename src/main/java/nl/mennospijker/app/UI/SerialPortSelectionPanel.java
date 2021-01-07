@@ -7,11 +7,11 @@ import org.json.simple.JSONObject;
 
 import javax.swing.*;
 
-public class SelectionPanel extends JPanel {
+public class SerialPortSelectionPanel extends JPanel {
     SerialConnection sc;
     JPanel panel = this;
 
-    public SelectionPanel(SerialConnection SCon) {
+    public SerialPortSelectionPanel(SerialConnection SCon) {
         super();
         sc = SCon;
 
