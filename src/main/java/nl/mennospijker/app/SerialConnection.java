@@ -126,7 +126,7 @@ public class SerialConnection {
             }
         });
 
-        writeBytesToComPort("test");
+        writeBytesToComPort("est");
     }
 
     public void createComportConnectionWithView(int i, JPanel field, JScrollPane sp) {

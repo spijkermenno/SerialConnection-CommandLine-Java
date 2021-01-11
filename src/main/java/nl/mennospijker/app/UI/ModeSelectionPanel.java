@@ -2,8 +2,6 @@ package nl.mennospijker.app.UI;
 
 import net.miginfocom.swing.MigLayout;
 import nl.mennospijker.app.SerialConnection;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 
 import javax.swing.*;
 
@@ -20,8 +18,6 @@ public class ModeSelectionPanel extends JPanel {
         JLabel l = new JLabel("What do you want to do?");
         l.setHorizontalAlignment(SwingConstants.CENTER);
         add(l, "span, grow, height 10%");
-
-
 
         JButton serialButton = new JButton("Read serial port");
 
