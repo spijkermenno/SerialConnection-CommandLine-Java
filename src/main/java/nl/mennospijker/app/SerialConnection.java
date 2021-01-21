@@ -7,7 +7,6 @@ import org.json.simple.JSONObject;
 import nl.mennospijker.util.ConsoleColor;
 
 import javax.swing.*;
-import java.awt.*;
 import java.io.*;
 
 import static java.lang.Thread.sleep;
@@ -17,16 +16,26 @@ public class SerialConnection {
     SerialPort currentComport;
     boolean usingComport = false;
 
+    /**
+     * Constructor
+     * Sets available comports retrieved.
+     */
     public SerialConnection() {
         availableComports = SerialPort.getCommPorts();
     }
 
+    /**
+     * Starts the console application, only for debugging.
+     */
     public void startConsoleApplication() {
         searchAvailableComPorts();
         readConsole();
     }
 
-    public JSONArray getAvailableComports(){
+    /**
+     * @return JSONArray with detailed comports.
+     */
+    public JSONArray getAvailableComports() {
         JSONArray fullList = new JSONArray();
 
         for (int i = 0; i < availableComports.length; i++) {
@@ -43,6 +52,9 @@ public class SerialConnection {
         return fullList;
     }
 
+    /**
+     * part of the console application used while debugging.
+     */
     public void searchAvailableComPorts() {
         System.out.println("Possible connections:");
 
@@ -86,6 +98,10 @@ public class SerialConnection {
         }
     }
 
+    /**
+     * @param currentComport selected comport where a listener should be added.
+     *                       Openning a comport listener with default BAUDRATE 9600.
+     */
     public void createComportConnection(SerialPort currentComport) {
         if (!currentComport.openPort()) {
             throw new SerialPortInvalidPortException("Port could not be opened");
@@ -111,6 +127,13 @@ public class SerialConnection {
             }
         });
 
+        DataListenerRecieved(currentComport);
+    }
+
+    /**
+     * @param currentComport comport where datalisterner will be implemented on.
+     */
+    private void DataListenerRecieved(SerialPort currentComport) {
         currentComport.addDataListener(new SerialPortDataListener() {
             @Override
             public int getListeningEvents() {
@@ -125,14 +148,17 @@ public class SerialConnection {
                 System.out.println("LISTENING_EVENT_DATA_RECEIVED");
             }
         });
-
-        writeBytesToComPort("est");
     }
 
-    public void createComportConnectionWithView(int i, JPanel field, JScrollPane sp) {
-        currentComport = availableComports[i];
+    /**
+     * @param currentComportID INT, location of current comport in arraylist.
+     * @param resultView JPanel, view where the results should be printed.
+     * @param scrollPane JScrollPane, Panel where the resultview is located in.
+     */
+    public void createComportConnectionWithView(int currentComportID, JPanel resultView, JScrollPane scrollPane) {
+        currentComport = availableComports[currentComportID];
 
-        if (currentComport == null){
+        if (currentComport == null) {
             throw new SerialPortInvalidPortException();
         }
 
@@ -156,27 +182,18 @@ public class SerialConnection {
                     return;
                 }
 
-                readInputStreamWithView(field, sp);
+                readInputStreamWithView(resultView, scrollPane);
             }
         });
 
-        currentComport.addDataListener(new SerialPortDataListener() {
-            @Override
-            public int getListeningEvents() {
-                return SerialPort.LISTENING_EVENT_DATA_RECEIVED;
-            }
-
-            @Override
-            public void serialEvent(SerialPortEvent event) {
-                if (event.getEventType() != SerialPort.LISTENING_EVENT_DATA_RECEIVED) {
-                    return;
-                }
-                System.out.println("LISTENING_EVENT_DATA_RECEIVED");
-            }
-        });
+        DataListenerRecieved(currentComport);
     }
 
-    public synchronized void readInputStreamWithView(JPanel field, JScrollPane sp) {
+    /**
+     * @param resultView JPanel, view where the results should be printed.
+     * @param scrollPane JScrollPane, Panel where the resultview is located in.
+     */
+    public synchronized void readInputStreamWithView(JPanel resultView, JScrollPane scrollPane) {
         if (!usingComport) {
             usingComport = true;
 
@@ -184,7 +201,6 @@ public class SerialConnection {
 
             InputStream comportInputStream = currentComport.getInputStream();
             currentComport.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0);
-
 
             try {
                 final int bytes = currentComport.bytesAvailable();
@@ -197,12 +213,12 @@ public class SerialConnection {
                 }
 
                 JLabel l = new JLabel("[" + java.time.LocalTime.now() + "] " + readedValue.toString());
-                field.add(l, "span, grow");
+                resultView.add(l, "span, grow");
 
-                field.revalidate();
+                resultView.revalidate();
 
-                JScrollBar sb = sp.getVerticalScrollBar();
-                sb.setValue( sb.getMaximum() );
+                JScrollBar sb = scrollPane.getVerticalScrollBar();
+                sb.setValue(sb.getMaximum());
 
                 comportInputStream.close();
             } catch (IOException e) {
@@ -223,6 +239,9 @@ public class SerialConnection {
         }
     }
 
+    /**
+     * Part of the console debug application, read the input of the console.
+     */
     public synchronized void readInputStream() {
         if (!usingComport) {
             usingComport = true;
@@ -292,6 +311,9 @@ public class SerialConnection {
         return Integer.parseInt(input);
     }
 
+    /**
+     * @param data String, what data should be sent to the comport.
+     */
     public synchronized void writeBytesToComPort(String data) {
         if (!usingComport) {
             usingComport = true;
